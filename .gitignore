@@ -1,0 +1,22 @@
+# Thư mục/file làm việc của AI và harness — không commit, không push
+.claude/
+.harness/
+docs/
+scripts/
+AGENTS.md
+CLAUDE.md
+harness.db
+harness.db-wal
+harness.db-shm
+
+# Node.js
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+
+# Hệ điều hành / editor
+.DS_Store
+.idea/
+.vscode/
