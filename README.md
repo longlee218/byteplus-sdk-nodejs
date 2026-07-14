@@ -13,7 +13,7 @@ BytePlus SDK cho Node.js — port từ [byteplus-sdk-python](https://github.com/
 | --- | --- |
 | Lõi: ký request SignerV4, Service/Request, Credentials, STS2, util, const | ✅ Hoàn thành |
 | IAM | ✅ Hoàn thành |
-| Visual | 🔜 Kế tiếp |
+| Visual | ✅ Hoàn thành |
 | SMS, CDN, Live, VOD | 📋 Kế hoạch |
 
 ## Cài đặt
@@ -78,6 +78,34 @@ iam.setSk('<SK>');
 
 const users = await iam.listUsers({ Limit: 5, Offset: 0 });
 ```
+
+### Module Visual (Computer Vision)
+
+```typescript
+import { VisualService } from 'byteplus-sdk-nodejs';
+
+const visual = new VisualService(); // singleton, host cv.byteplusapi.com, https
+visual.setAk('<AK>');
+visual.setSk('<SK>');
+
+// API JSON (v2024-06-06)
+const result = await visual.cvProcess({
+  req_key: 'face_swap',
+  binary_data_base64: ['<ảnh base64>'],
+});
+
+// Tác vụ bất đồng bộ
+const task = await visual.cvSubmitTask({ req_key: '...' });
+const output = await visual.cvGetResult({ task_id: '...' });
+
+// API form (v2022-08-24)
+const comic = await visual.comicPortrait({ image_base64: '<ảnh base64>' });
+```
+
+> Lưu ý (giữ nguyên hành vi bản Python): khi BytePlus trả lỗi có body JSON
+> (vd `{"code": 50411, "message": ...}`), các method Visual **trả về object
+> lỗi đó** thay vì throw — hãy kiểm tra `code` trong kết quả. Chỉ throw khi
+> response lỗi không phải JSON.
 
 ### STS2 token
 

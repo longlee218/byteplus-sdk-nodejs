@@ -6,6 +6,7 @@ export { SignerV4 } from './auth/signer-v4';
 export { Request } from './base/request';
 export { Service } from './base/service';
 export { IamService } from './iam/iam-service';
+export { VisualService } from './visual/visual-service';
 export {
   InnerToken,
   Policy,
