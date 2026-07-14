@@ -1,0 +1,26 @@
+{
+  "name": "byteplus-sdk-nodejs",
+  "version": "0.1.0",
+  "description": "BytePlus SDK cho Node.js — port từ byteplus-sdk-python (master)",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.19.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "TZ=Asia/Ho_Chi_Minh vitest run --coverage",
+    "test:watch": "TZ=Asia/Ho_Chi_Minh vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.4"
+  }
+}

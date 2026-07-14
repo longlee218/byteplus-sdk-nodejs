@@ -1,0 +1,300 @@
+{
+  "hmacSha256": [
+    {
+      "keyUtf8": "secret-key",
+      "content": "hello world",
+      "digestHex": "095d5a21fe6d0646db223fdf3de6436bb8dfb2fab0b51677ecf6441fcf5f2a67"
+    },
+    {
+      "keyUtf8": "k",
+      "content": "",
+      "digestHex": "8bb990c40a7d61cb97597a942125025be50ac8beb74436e3735b98893a7f6620"
+    },
+    {
+      "keyUtf8": "khoá-việt",
+      "content": "nội dung tiếng Việt 港",
+      "digestHex": "b1820c51e3a2f4dead84039aded05cc0f6b30b360e0dac7f8b2baa746ce2b594"
+    }
+  ],
+  "hmacSha1": [
+    {
+      "keyUtf8": "secret-key",
+      "content": "hello world",
+      "digestHex": "b84b002077152646a6da921cf58121705150a967"
+    },
+    {
+      "keyUtf8": "k",
+      "content": "a",
+      "digestHex": "40e7d441cadb17b07f050341aa23a6820ed81c8b"
+    }
+  ],
+  "sha256": [
+    {
+      "content": "",
+      "hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "content": "hello",
+      "hex": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+    },
+    {
+      "content": "{\"A\": 1}",
+      "hex": "3e3bc87b3fc3707259f111f0617eabaf670e9fe08196e1ca5e4b26c4d2a90510"
+    },
+    {
+      "content": "tiếng Việt 港",
+      "hex": "956ea410a188e335dbda42a70c9503f8c4301553c96c1fa0d66b235c1d03477c"
+    }
+  ],
+  "aesCbc": [
+    {
+      "data": "abcdefghijklmnopqrstuvwxyzABCDEF",
+      "keyUtf8": "bytedance-isgood",
+      "base64": "z7VuQV8nj53SUatsCfPSjTaqbsf3b9cPgJ5ErTyQfNLQQgoaBMR6+65xzj9HWqaB"
+    },
+    {
+      "data": "short",
+      "keyUtf8": "bytedance-isgood",
+      "base64": "s05mbwuS6G77pSJbZmXqXw=="
+    },
+    {
+      "data": "16bytes-exactly!",
+      "keyUtf8": "bytedance-isgood",
+      "base64": "uEdCLmEQICR1WdE5bUKI8XNhFd37VzImWrJD5qo6RlI="
+    }
+  ],
+  "crc32": {
+    "contentBase64": "aGVsbG8gYnl0ZXBsdXMKc2Vjb25kIGxpbmUKYmluYXJ5OgABAv8K",
+    "value": 1758278923
+  },
+  "normUri": [
+    {
+      "path": "/",
+      "out": "/"
+    },
+    {
+      "path": "/a/b",
+      "out": "/a/b"
+    },
+    {
+      "path": "/a b+c/đường",
+      "out": "/a%20b%2Bc/%C4%91%C6%B0%E1%BB%9Dng"
+    },
+    {
+      "path": "/x~y_z-1.2",
+      "out": "/x~y_z-1.2"
+    }
+  ],
+  "normQuery": [
+    {
+      "params": {
+        "b": "2",
+        "a": "1"
+      },
+      "out": "a=1&b=2"
+    },
+    {
+      "params": {
+        "a": "x y",
+        "sp": "~-_.",
+        "plus": "a+b",
+        "slash": "a/b"
+      },
+      "out": "a=x%20y&plus=a%2Bb&slash=a%2Fb&sp=~-_."
+    },
+    {
+      "params": {
+        "list": [
+          "2",
+          "1",
+          "x y"
+        ],
+        "z": "v"
+      },
+      "out": "list=2&list=1&list=x%20y&z=v"
+    },
+    {
+      "params": {
+        "việt": "nội dung 港"
+      },
+      "out": "vi%E1%BB%87t=n%E1%BB%99i%20dung%20%E6%B8%AF"
+    }
+  ],
+  "pyJsonDumps": {
+    "note": "input được mô tả lại trong test TS theo đúng thứ tự chèn key",
+    "output": "{\"Name\": \"test-user\", \"Ids\": [1, 2], \"Nested\": {\"B\": 1.5, \"A\": \"x y\"}, \"Note\": \"vi\\u1ec7t \\u6e2f\", \"Flag\": true, \"Empty\": null}",
+    "outputSorted": "{\"Empty\": null, \"Flag\": true, \"Ids\": [1, 2], \"Name\": \"test-user\", \"Nested\": {\"A\": \"x y\", \"B\": 1.5}, \"Note\": \"vi\\u1ec7t \\u6e2f\"}"
+  },
+  "generateAccessKeyId": {
+    "uuid": "12345678-1234-5678-1234-567812345678",
+    "prefix": "AKTP",
+    "out": "AKTPMTIzNDU2NzgxMjM0NTY3ODEyMzQ1Njc4MTIzNDU2Nzg"
+  },
+  "randStringRunes": {
+    "length": 32,
+    "out": "abcdefghijklmnopqrstuvwxyzABCDEF"
+  },
+  "generateSecretKey": {
+    "out": "z7VuQV8nj53SUatsCfPSjTaqbsf3b9cPgJ5ErTyQfNLQQgoaBMR6+65xzj9HWqaB"
+  },
+  "sign": {
+    "xDate": "20260714T120000Z",
+    "credentials": {
+      "ak": "AKTPtestak",
+      "sk": "testsk-fixed-secret",
+      "service": "iam",
+      "region": "ap-singapore-1"
+    },
+    "bodyFixtureNote": "case post-json-dict dùng body dict như pyJsonDumps fixture",
+    "cases": [
+      {
+        "name": "get-simple",
+        "method": "GET",
+        "path": "/",
+        "host": "open.byteplusapi.com",
+        "query": {
+          "Action": "ListUsers",
+          "Version": "2018-01-01",
+          "Limit": "10"
+        },
+        "headersIn": {
+          "Host": "open.byteplusapi.com",
+          "User-Agent": "byteplus-sdk-nodejs/0.1.0"
+        },
+        "body": "",
+        "headersOut": {
+          "Host": "open.byteplusapi.com",
+          "User-Agent": "byteplus-sdk-nodejs/0.1.0",
+          "X-Date": "20260714T120000Z",
+          "X-Content-Sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "Authorization": "HMAC-SHA256 Credential=AKTPtestak/20260714/ap-singapore-1/iam/request, SignedHeaders=host;x-content-sha256;x-date, Signature=24a98c7d22d75e61febceae7f4144e92ade7dfb3e5a3deaf93c0f3c9434c18af"
+        },
+        "builtUrl": "https://open.byteplusapi.com/?Action=ListUsers&Version=2018-01-01&Limit=10"
+      },
+      {
+        "name": "get-port-443",
+        "method": "GET",
+        "path": "/path a",
+        "host": "open.byteplusapi.com:443",
+        "query": {
+          "Action": "GetUser"
+        },
+        "headersIn": {
+          "Host": "open.byteplusapi.com:443"
+        },
+        "body": "",
+        "headersOut": {
+          "Host": "open.byteplusapi.com:443",
+          "X-Date": "20260714T120000Z",
+          "X-Content-Sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "Authorization": "HMAC-SHA256 Credential=AKTPtestak/20260714/ap-singapore-1/iam/request, SignedHeaders=host;x-content-sha256;x-date, Signature=13334bc69b2002540b69f268d22b810fb75bc4b03ae20090c6926e4f81e5b15f"
+        },
+        "builtUrl": "https://open.byteplusapi.com:443/path a?Action=GetUser"
+      },
+      {
+        "name": "post-form",
+        "method": "POST",
+        "path": "/",
+        "host": "open.byteplusapi.com",
+        "query": {
+          "Action": "CreateUser",
+          "Version": "2018-01-01"
+        },
+        "headersIn": {
+          "Host": "open.byteplusapi.com",
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        "body": "UserName=test%20user&Description=x",
+        "headersOut": {
+          "Host": "open.byteplusapi.com",
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-Date": "20260714T120000Z",
+          "X-Content-Sha256": "c4fb919852273edd70e9e23f30a936e1589692d08fd1867b6de76ff05d348684",
+          "Authorization": "HMAC-SHA256 Credential=AKTPtestak/20260714/ap-singapore-1/iam/request, SignedHeaders=content-type;host;x-content-sha256;x-date, Signature=cd8673b064bcab513c0a6627d52f1eba9c581013e131a3b013c1d5f2c0dc1f75"
+        },
+        "builtUrl": "https://open.byteplusapi.com/?Action=CreateUser&Version=2018-01-01"
+      },
+      {
+        "name": "post-json-dict",
+        "method": "POST",
+        "path": "/",
+        "host": "visual.byteplusapi.com",
+        "query": {
+          "Action": "OCRNormal",
+          "Version": "2020-08-26"
+        },
+        "headersIn": {
+          "Host": "visual.byteplusapi.com",
+          "Content-Type": "application/json"
+        },
+        "bodyIsPyJsonDumpsOfBodyFixture": true,
+        "headersOut": {
+          "Host": "visual.byteplusapi.com",
+          "Content-Type": "application/json",
+          "X-Date": "20260714T120000Z",
+          "X-Content-Sha256": "4b60fdddd67f49931c51b3dd94a5564396fc2f4e3869af4dbcd2b576b80c7b1a",
+          "Authorization": "HMAC-SHA256 Credential=AKTPtestak/20260714/ap-singapore-1/iam/request, SignedHeaders=content-type;host;x-content-sha256;x-date, Signature=4647a879f93a7d16a5d962c514ea8f4478d962d199200912e7204fd8bdd4f6a4"
+        },
+        "builtUrl": "https://visual.byteplusapi.com/?Action=OCRNormal&Version=2020-08-26"
+      },
+      {
+        "name": "post-default-content-type",
+        "method": "POST",
+        "path": "/x",
+        "host": "open.byteplusapi.com",
+        "query": {
+          "A": "1"
+        },
+        "headersIn": {
+          "Host": "open.byteplusapi.com"
+        },
+        "body": "raw-body",
+        "headersOut": {
+          "Host": "open.byteplusapi.com",
+          "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+          "X-Date": "20260714T120000Z",
+          "X-Content-Sha256": "10faf7dc46efadbdafe80763a0508913435987609b2591e606095b9c4547f49c",
+          "Authorization": "HMAC-SHA256 Credential=AKTPtestak/20260714/ap-singapore-1/iam/request, SignedHeaders=content-type;host;x-content-sha256;x-date, Signature=70f74d2e71a230d729f95c736c5f62e18be5684325cc1a10625de8ac7c9dc1d1"
+        },
+        "builtUrl": "https://open.byteplusapi.com/x?A=1"
+      }
+    ]
+  },
+  "signUrl": {
+    "query": {
+      "Action": "ListUsers",
+      "Version": "2018-01-01"
+    },
+    "method": "GET",
+    "path": "/",
+    "out": "Action=ListUsers&Version=2018-01-01&X-Date=20260714T120000Z&X-NotSignBody=&X-Credential=AKTPtestak%2F20260714%2Fap-singapore-1%2Fiam%2Frequest&X-Algorithm=HMAC-SHA256&X-SignedHeaders=&X-SignedQueries=Action%3BVersion%3BX-Algorithm%3BX-Credential%3BX-Date%3BX-NotSignBody%3BX-SignedHeaders%3BX-SignedQueries&X-Signature=d9e1a93a31ad8d0c89d0c7c92f095dff51116594a8637b16536e55806b416147"
+  },
+  "sts2": {
+    "tz": "Asia/Ho_Chi_Minh",
+    "nowEpoch": 1789000000,
+    "expireSeconds": 3600,
+    "policy": {
+      "statements": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "vod:GetPlayInfo"
+          ],
+          "Resource": [
+            "trn:vod::*:video_id/abc"
+          ]
+        }
+      ]
+    },
+    "accessKeyId": "AKTPMTIzNDU2NzgxMjM0NTY3ODEyMzQ1Njc4MTIzNDU2Nzg",
+    "secretAccessKey": "z7VuQV8nj53SUatsCfPSjTaqbsf3b9cPgJ5ErTyQfNLQQgoaBMR6+65xzj9HWqaB",
+    "currentTime": "2026-09-10T07:26:40+07:00",
+    "expiredTime": "2026-09-10T08:26:40+07:00",
+    "sessionToken": "STS2eyJBY2Nlc3NLZXlJZCI6IkFLVFBNVEl6TkRVMk56Z3hNak0wTlRZM09ERXlNelExTmpjNE1USXpORFUyTnpnIiwiRXhwaXJlZFRpbWUiOjE3ODkwMDM2MDAsIkxUQWNjZXNzS2V5SWQiOiJBS1RQdGVzdGFrIiwiUG9saWN5U3RyaW5nIjoie1wiU3RhdGVtZW50XCI6W3tcIkFjdGlvblwiOltcInZvZDpHZXRQbGF5SW5mb1wiXSxcIkVmZmVjdFwiOlwiQWxsb3dcIixcIlJlc291cmNlXCI6W1widHJuOnZvZDo6Kjp2aWRlb19pZC9hYmNcIl19XX0iLCJTaWduYXR1cmUiOiIyOTBjZGZhZDc5OTdmNThjOGViZTZlZTc3NmEzNjA2MDM5N2U0ZjBiNjUzYWRkMDA0NTU1MDkyNDZiOTQxZDUwIiwiU2lnbmVkU2VjcmV0QWNjZXNzS2V5IjoicEczQTFwVnFiemtHeHE4bXVTRWpkTDBhNkZ0MW9IOEpZSlpXQ2tkcnQza2V3L3VmTVUrU09PYVIrZHRPaEl5eEI3V2VWVlNkVmZ4MEF0MlFkMVh1b2tlVDQ5WHc3eERwb1BuR2w5LzByT1E9In0="
+  },
+  "sts2NoPolicy": {
+    "expireSeconds": 30,
+    "expiredTime": "2026-09-10T07:27:40+07:00",
+    "sessionToken": "STS2eyJBY2Nlc3NLZXlJZCI6IkFLVFBNVEl6TkRVMk56Z3hNak0wTlRZM09ERXlNelExTmpjNE1USXpORFUyTnpnIiwiRXhwaXJlZFRpbWUiOjE3ODkwMDAwNjAsIkxUQWNjZXNzS2V5SWQiOiJBS1RQdGVzdGFrIiwiUG9saWN5U3RyaW5nIjoiIiwiU2lnbmF0dXJlIjoiMGFmNWUxOGQ1NWNiOWMzMWQ3ZjBjNWNhMmNmYTdlMzJkOTAwZDZkOTc5OTExNDk4MWZlZTkyMDQwNWE4MjE5MCIsIlNpZ25lZFNlY3JldEFjY2Vzc0tleSI6InBHM0ExcFZxYnprR3hxOG11U0VqZEwwYTZGdDFvSDhKWUpaV0NrZHJ0M2tldy91Zk1VK1NPT2FSK2R0T2hJeXhCN1dlVlZTZFZmeDBBdDJRZDFYdW9rZVQ0OVh3N3hEcG9QbkdsOS8wck9RPSJ9"
+  }
+}
