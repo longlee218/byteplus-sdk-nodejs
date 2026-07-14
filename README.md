@@ -16,6 +16,8 @@ BytePlus SDK cho Node.js — port từ [byteplus-sdk-python](https://github.com/
 | Visual | ✅ Hoàn thành |
 | SMS, CDN, Live, VOD | 📋 Kế hoạch |
 
+📖 **Tài liệu chi tiết:** [Hướng dẫn tích hợp](guides/huong-dan-tich-hop.md) · **Code mẫu:** [`examples/`](examples/)
+
 ## Cài đặt
 
 Package chưa publish lên npm. Cài trực tiếp từ repo:
