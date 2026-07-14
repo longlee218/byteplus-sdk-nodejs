@@ -5,6 +5,7 @@ export { MetaData } from './auth/meta-data';
 export { SignerV4 } from './auth/signer-v4';
 export { Request } from './base/request';
 export { Service } from './base/service';
+export { IamService } from './iam/iam-service';
 export {
   InnerToken,
   Policy,

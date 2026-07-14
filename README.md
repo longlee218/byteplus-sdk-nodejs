@@ -12,7 +12,7 @@ BytePlus SDK cho Node.js — port từ [byteplus-sdk-python](https://github.com/
 | Module | Trạng thái |
 | --- | --- |
 | Lõi: ký request SignerV4, Service/Request, Credentials, STS2, util, const | ✅ Hoàn thành |
-| IAM | 🔜 Kế tiếp |
+| IAM | ✅ Hoàn thành |
 | Visual | 🔜 Kế tiếp |
 | SMS, CDN, Live, VOD | 📋 Kế hoạch |
 
@@ -64,6 +64,19 @@ const result = await service.get('ListUsers', { Limit: 10 });
 
 // Sinh URL đã ký (không gửi request)
 // const signedQuery = service.getSignUrl('ListUsers', {});
+```
+
+### Module IAM
+
+```typescript
+import { IamService } from 'byteplus-sdk-nodejs';
+
+const iam = new IamService(); // singleton, mặc định region ap-singapore-1
+iam.setScheme('https');
+iam.setAk('<AK>'); // bỏ qua nếu đã cấu hình env hoặc ~/.byteplus/config
+iam.setSk('<SK>');
+
+const users = await iam.listUsers({ Limit: 5, Offset: 0 });
 ```
 
 ### STS2 token
