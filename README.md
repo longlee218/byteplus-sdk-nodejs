@@ -14,7 +14,8 @@ BytePlus SDK cho Node.js — port từ [byteplus-sdk-python](https://github.com/
 | Lõi: ký request SignerV4, Service/Request, Credentials, STS2, util, const | ✅ Hoàn thành |
 | IAM | ✅ Hoàn thành |
 | Visual | ✅ Hoàn thành |
-| SMS, CDN, Live, VOD | 📋 Kế hoạch |
+| SMS | ✅ Hoàn thành |
+| CDN, Live, VOD | 📋 Kế hoạch |
 
 📖 **Tài liệu chi tiết:** [Hướng dẫn tích hợp](guides/huong-dan-tich-hop.md) · **Code mẫu:** [`examples/`](examples/)
 
@@ -109,6 +110,38 @@ const comic = await visual.comicPortrait({ image_base64: '<ảnh base64>' });
 > lỗi đó** thay vì throw — hãy kiểm tra `code` trong kết quả. Chỉ throw khi
 > response lỗi không phải JSON.
 
+### Module SMS
+
+```typescript
+import { SmsService } from 'byteplus-sdk-nodejs';
+
+// Mặc định region cn-north-1 (host sms.volcengineapi.com) — giống Python.
+// Với BytePlus quốc tế dùng ap-singapore-1 (host sms.byteplusapi.com):
+const sms = new SmsService('ap-singapore-1'); // singleton
+sms.setAk('<AK>'); // bỏ qua nếu đã cấu hình env hoặc ~/.byteplus/config
+sms.setSk('<SK>');
+
+// Gửi SMS
+const result = await sms.sendSms({
+  SmsAccount: '<sms_account>',
+  Sign: '<chữ_ký_thương_hiệu>',
+  TemplateID: '<template_id>',
+  TemplateParam: '{"code": "123456"}',
+  PhoneNumbers: '84900000000',
+});
+
+// Gửi / kiểm tra mã xác thực
+await sms.sendSmsVerifyCode({ SmsAccount: '...', Sign: '...', TemplateID: '...', PhoneNumbers: '...', Scene: '...', ExpireTime: 300, TryCount: 3, CodeType: 6 });
+await sms.checkSmsVerifyCode({ SmsAccount: '...', PhoneNumber: '...', Scene: '...', Code: '123456' });
+
+// Quản lý template / sub-account
+await sms.getSmsTemplateAndOrderList({ subAccount: '...', pageIndex: 1, pageSize: 10 });
+await sms.getSubAccountList({ subAccountName: '', pageIndex: 1, pageSize: 10 });
+```
+
+> Mỗi method SMS tự retry thêm 1 lần khi lỗi (giữ nguyên `@retry(tries=2)`
+> của bản Python).
+
 ### STS2 token
 
 ```typescript
@@ -135,9 +168,8 @@ Util.crc32File('/path/to/file');         // CRC32 khi upload file
 
 Bản Node giữ nguyên hành vi ký/mã hoá, chỉ khác các điểm sau:
 
-- HTTP dùng `fetch` built-in thay cho thư viện `requests`; timeout tổng = `connectionTimeout + socketTimeout`.
+- HTTP dùng `fetch` built-in thay cho thư viện `requests`; timeout tổng = `connectionTimeout + socketTimeout`. Riêng `service.json()` với method `GET` kèm body khác rỗng (một số API SMS cần) đi qua `node:http(s)` vì fetch cấm GET có body — wire format vẫn giống hệt Python.
 - `ServiceInfoHttps` không tồn tại — dùng `ServiceInfo` với tham số `scheme: 'https'`.
-- `service.json()` với method `GET` kèm body khác rỗng sẽ throw (fetch không cho phép GET có body).
 - Naming đổi sang camelCase: `set_ak` → `setAk`, `sign_sts2` → `signSts2`…
 
 ## Phát triển

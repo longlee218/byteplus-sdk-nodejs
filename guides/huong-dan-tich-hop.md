@@ -8,10 +8,11 @@ Tài liệu này hướng dẫn tích hợp SDK vào dự án Node.js/TypeScript
 2. [Cấu hình credential](#2-cấu-hình-credential)
 3. [Module IAM](#3-module-iam)
 4. [Module Visual](#4-module-visual)
-5. [STS2 token](#5-sts2-token)
-6. [Gọi API BytePlus bất kỳ bằng lõi SDK](#6-gọi-api-byteplus-bất-kỳ-bằng-lõi-sdk)
-7. [Xử lý lỗi](#7-xử-lý-lỗi)
-8. [Khác biệt so với bản Python](#8-khác-biệt-so-với-bản-python)
+5. [Module SMS](#5-module-sms)
+6. [STS2 token](#6-sts2-token)
+7. [Gọi API BytePlus bất kỳ bằng lõi SDK](#7-gọi-api-byteplus-bất-kỳ-bằng-lõi-sdk)
+8. [Xử lý lỗi](#8-xử-lý-lỗi)
+9. [Khác biệt so với bản Python](#9-khác-biệt-so-với-bản-python)
 
 ## 1. Yêu cầu và cài đặt
 
@@ -113,7 +114,67 @@ if (resp.code !== 10000) {
 
 Method chỉ throw khi response lỗi không phải JSON (vd lỗi mạng, HTML gateway).
 
-## 5. STS2 token
+## 5. Module SMS
+
+```typescript
+import { SmsService } from 'byteplus-sdk-nodejs';
+
+// Region quyết định host (giống Python):
+// - 'ap-singapore-1'  → sms.byteplusapi.com (BytePlus quốc tế)
+// - mặc định 'cn-north-1' → sms.volcengineapi.com
+const sms = new SmsService('ap-singapore-1');
+```
+
+### Gửi SMS
+
+```typescript
+const resp = await sms.sendSms({
+  SmsAccount: '<sms_account>',   // message group ID trên console
+  Sign: '<chữ_ký_thương_hiệu>',
+  TemplateID: '<template_id>',
+  TemplateParam: '{"code": "123456"}', // string JSON, không phải object
+  PhoneNumbers: '84900000000',   // nhiều số cách nhau dấu phẩy
+});
+// resp = { ResponseMetadata: {...}, Result: { MessageID: [...] } }
+
+// Gửi hàng loạt với nội dung khác nhau từng số:
+await sms.sendBatchSms({ SmsAccount: '...', Sign: '...', TemplateID: '...', Messages: [/* ... */] });
+```
+
+### Mã xác thực (OTP)
+
+```typescript
+await sms.sendSmsVerifyCode({
+  SmsAccount: '...', Sign: '...', TemplateID: '...',
+  PhoneNumber: '84900000000', Scene: 'login',
+  ExpireTime: 300, TryCount: 3, CodeType: 6,
+});
+
+const check = await sms.checkSmsVerifyCode({
+  SmsAccount: '...', PhoneNumber: '84900000000',
+  Scene: 'login', Code: '123456',
+});
+```
+
+### Template và sub-account
+
+```typescript
+await sms.applySmsTemplate({ /* đăng ký template mới */ });
+await sms.deleteSmsTemplate({ /* xoá template */ });
+await sms.getSmsTemplateAndOrderList({ subAccount: '...', pageIndex: 1, pageSize: 10 });
+await sms.getSubAccountList({ subAccountName: '', pageIndex: 1, pageSize: 10 });
+await sms.getSubAccountDetail({ subAccount: '...' });
+await sms.insertSmsSubAccount({ /* tạo sub-account */ });
+await sms.conversion({ /* báo cáo conversion */ });
+```
+
+Lưu ý:
+
+- Mỗi method **tự retry thêm 1 lần** khi lỗi (giữ nguyên `@retry(tries=2)` của Python) — lỗi bạn nhận được là lỗi của lần gọi thứ 2.
+- `getSmsTemplateAndOrderList` gửi dữ liệu trong **body của request GET** (đúng contract server BytePlus, như bản Python) — SDK tự xử lý qua `node:http(s)`.
+- Body rỗng → throw `Error('empty response')`; HTTP status khác 200 → throw body lỗi.
+
+## 6. STS2 token
 
 Cấp credential tạm thời (ví dụ cho client mobile gọi VOD):
 
@@ -134,9 +195,9 @@ const sts = service.signSts2(policy, 3600); // tối thiểu 60 giây
 
 Truyền `null` thay cho policy nếu không giới hạn quyền.
 
-## 6. Gọi API BytePlus bất kỳ bằng lõi SDK
+## 7. Gọi API BytePlus bất kỳ bằng lõi SDK
 
-Với service chưa có module riêng (SMS, CDN, Live, VOD — xem roadmap), dùng trực tiếp `Service` + `ApiInfo`:
+Với service chưa có module riêng (CDN, Live, VOD — xem roadmap), dùng trực tiếp `Service` + `ApiInfo`:
 
 ```typescript
 import { ApiInfo, Credentials, Service, ServiceInfo } from 'byteplus-sdk-nodejs';
@@ -163,13 +224,14 @@ const [ok, body] = await service.putData('<url>', buffer, headers);   // upload 
 
 Tiện ích mã hoá đi kèm (`Util`): `sha256`, `hmacSha256`, `hmacSha1`, `crc32`, `crc32File`, `aesEncryptCbcWithBase64`, `normQuery`, `pyJsonDumps`…
 
-## 7. Xử lý lỗi
+## 8. Xử lý lỗi
 
 | Tình huống | Hành vi |
 | --- | --- |
 | HTTP status khác 200 (`Service.get/post/json`) | Throw `Error` với message là body response |
 | Visual: lỗi có body JSON | **Return** object lỗi (xem mục 4) |
-| IAM: body rỗng | Throw `Error('empty response')` |
+| IAM/SMS: body rỗng | Throw `Error('empty response')` |
+| SMS: mọi lỗi | Retry thêm 1 lần trước khi throw (xem mục 5) |
 | Timeout (connection + socket, tính bằng giây) | Throw `TimeoutError` từ `AbortSignal.timeout` |
 | Gọi API không khai báo trong `apiInfo` | Throw `Error('no such api')` |
 
@@ -184,7 +246,7 @@ try {
 }
 ```
 
-## 8. Khác biệt so với bản Python
+## 9. Khác biệt so với bản Python
 
 Hành vi ký/mã hoá giữ nguyên 100% (kiểm chứng bằng test vector đối chiếu từng byte). Khác biệt:
 
@@ -192,6 +254,6 @@ Hành vi ký/mã hoá giữ nguyên 100% (kiểm chứng bằng test vector đ�
 | --- | --- | --- |
 | `requests` | `fetch` built-in; timeout tổng = connection + socket | Node 18+ có sẵn, zero dependency |
 | `ServiceInfoHttps` | `ServiceInfo(..., scheme: 'https')` | Class Python chỉ khác scheme mặc định |
-| `service.json()` với GET + body | Throw lỗi rõ ràng | `fetch` cấm GET có body |
+| `requests.get(url, json=body)` | `service.json()` với GET + body đi qua `node:http(s)`, wire format giữ nguyên | `fetch` cấm GET có body |
 | `snake_case` (`list_users`) | `camelCase` (`listUsers`) | Chuẩn JS/TS |
 | Trả `dict` | Trả `unknown` — tự cast theo API | An toàn kiểu ở phía người dùng |

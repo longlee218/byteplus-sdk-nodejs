@@ -1,8 +1,11 @@
 // Port từ byteplus_sdk/base/Service.py (master). Khác biệt so với Python
 // được ghi trong docs/stories/epics/E01-core/US-001-core-foundation/design.md:
 // - HTTP dùng fetch built-in; timeout = (connectionTimeout + socketTimeout).
-// - json() với method GET và body khác rỗng sẽ throw (fetch cấm GET có body).
+// - json() với method GET và body khác rỗng đi qua node:http(s) vì fetch cấm
+//   GET có body (quyết định 0010) — wire format giữ nguyên như Python.
 import { existsSync, readFileSync } from 'node:fs';
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 
 import { ApiInfo } from '../api-info';
 import { Credentials } from '../credentials';
@@ -146,9 +149,12 @@ export class Service {
     const url = r.build();
     const payload = typeof body === 'string' ? body : pyJsonDumps(body);
     if (apiInfo.method === 'GET' && payload !== '') {
-      throw new Error(
-        'json() với method GET và body khác rỗng không được hỗ trợ trong bản Node.js (fetch cấm GET có body)',
-      );
+      // Python requests gửi GET kèm body JSON và server đọc body này
+      // (vd SMS GetSmsTemplateAndOrderList) — fetch cấm nên đi node:http(s).
+      // Quyết định 0010.
+      const { status, text } = await this.getWithBody(url, r.headers, payload);
+      if (status === 200) return pyJsonDumps(JSON.parse(text));
+      throw new Error(text);
     }
     const resp = await this.fetchWithTimeout(url, {
       method: apiInfo.method === 'GET' ? 'GET' : 'POST',
@@ -157,6 +163,46 @@ export class Service {
     });
     if (resp.status === 200) return pyJsonDumps(await resp.json());
     throw new Error(await resp.text());
+  }
+
+  private getWithBody(
+    url: string,
+    headers: Record<string, string>,
+    payload: string,
+  ): Promise<{ status: number; text: string }> {
+    const timeoutMs =
+      (this.serviceInfo.connectionTimeout + this.serviceInfo.socketTimeout) *
+      1000;
+    const doRequest = url.startsWith('https:') ? httpsRequest : httpRequest;
+    return new Promise((resolve, reject) => {
+      const req = doRequest(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            ...headers,
+            'Content-Length': String(Buffer.byteLength(payload)),
+          },
+          timeout: timeoutMs,
+        },
+        (res) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () =>
+            resolve({
+              status: res.statusCode ?? 0,
+              text: Buffer.concat(chunks).toString('utf-8'),
+            }),
+          );
+          res.on('error', reject);
+        },
+      );
+      req.on('timeout', () =>
+        req.destroy(new Error(`GET có body quá thời gian chờ ${timeoutMs}ms`)),
+      );
+      req.on('error', reject);
+      req.end(payload);
+    });
   }
 
   async put(

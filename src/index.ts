@@ -7,6 +7,7 @@ export { Request } from './base/request';
 export { Service } from './base/service';
 export { IamService } from './iam/iam-service';
 export { VisualService } from './visual/visual-service';
+export { SmsService } from './sms/sms-service';
 export {
   InnerToken,
   Policy,

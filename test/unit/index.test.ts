@@ -15,6 +15,9 @@ describe('public API surface', () => {
     expect(sdk.Statement).toBeTypeOf('function');
     expect(sdk.SecurityToken2).toBeTypeOf('function');
     expect(sdk.InnerToken).toBeTypeOf('function');
+    expect(sdk.IamService).toBeTypeOf('function');
+    expect(sdk.VisualService).toBeTypeOf('function');
+    expect(sdk.SmsService).toBeTypeOf('function');
     expect(sdk.VERSION).toBeTypeOf('string');
     expect(sdk.Const.REGION_AP_SINGAPORE1).toBe('ap-singapore-1');
     expect(sdk.Util.sha256).toBeTypeOf('function');
