@@ -1,38 +1,34 @@
 // Sample: gọi Visual CVProcess (đồng bộ) và luồng submit/get-result (bất đồng bộ)
 // Chạy: BYTEPLUS_ACCESSKEY=<AK> BYTEPLUS_SECRETKEY=<SK> npx tsx examples/visual-cv-process.ts
-import { readFileSync } from 'node:fs';
+import { readFileSync } from "node:fs";
 
-import { VisualService } from '../src';
+import { VisualService } from "../src";
 
 interface CvResponse {
   code: number;
   message?: string;
-  data?: { task_id?: string; binary_data_base64?: string[] };
+  data?: { resp_data: string; status: string };
+  status: number;
+  request_id: string;
+  time_elapsed: string;
 }
 
 async function main(): Promise<void> {
   const visual = new VisualService(); // tự nạp AK/SK từ env hoặc ~/.byteplus/config
 
-  const imageBase64 = readFileSync('/đường/dẫn/ảnh.jpg').toString('base64');
+  const imageBase64 = readFileSync("/đường/dẫn/ảnh.jpg").toString("base64");
 
-  // ----- Cách 1: API đồng bộ -----
-  const result = (await visual.cvProcess({
-    req_key: '<tên_model_theo_tài_liệu_BytePlus>',
+  // ----- Bất đồng bộ (submit rồi poll kết quả) -----
+  const taskId = "task_" + new Date().getTime();
+  const task = (await visual.cvSync2AsyncGetResult({
+    req_key: "dreamactor_m20_gen_video_cvtob",
     binary_data_base64: [imageBase64],
+    video_url:
+      "https://sf16-resources.bytepluscdn.com/obj/byteplus-public-aiso/cloud-universal-doc/upload_1245a943232e4a7801f3e4dfba953ba5.mp4",
+    task_id: taskId,
   })) as CvResponse;
 
-  // Visual trả lỗi nghiệp vụ dưới dạng object (không throw) — kiểm tra code
-  if (result.code !== 10000) {
-    throw new Error(`BytePlus trả lỗi ${result.code}: ${result.message}`);
-  }
-  console.log('Số ảnh kết quả:', result.data?.binary_data_base64?.length);
-
-  // ----- Cách 2: bất đồng bộ (submit rồi poll kết quả) -----
-  const task = (await visual.cvSubmitTask({
-    req_key: '<tên_model>',
-    binary_data_base64: [imageBase64],
-  })) as CvResponse;
-  if (task.code !== 10000 || task.data?.task_id === undefined) {
+  if (task.code !== 10000) {
     throw new Error(`Submit thất bại ${task.code}: ${task.message}`);
   }
 
@@ -40,15 +36,15 @@ async function main(): Promise<void> {
   do {
     await new Promise((r) => setTimeout(r, 3000));
     output = (await visual.cvGetResult({
-      req_key: '<tên_model>',
-      task_id: task.data.task_id,
+      req_key: "dreamactor_m20_gen_video_cvtob",
+      task_id: taskId,
     })) as CvResponse;
-  } while (output.code === 10000 && output.data?.binary_data_base64 === undefined);
+  } while (output.code === 10000);
 
-  console.log('Kết quả task:', output.code);
+  console.log("Kết quả task:", output.code);
 }
 
 main().catch((e) => {
-  console.error('Lỗi:', (e as Error).message);
+  console.error("Lỗi:", (e as Error).message);
   process.exitCode = 1;
 });
