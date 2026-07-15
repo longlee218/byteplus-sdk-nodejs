@@ -9,10 +9,11 @@ Tài liệu này hướng dẫn tích hợp SDK vào dự án Node.js/TypeScript
 3. [Module IAM](#3-module-iam)
 4. [Module Visual](#4-module-visual)
 5. [Module SMS](#5-module-sms)
-6. [STS2 token](#6-sts2-token)
-7. [Gọi API BytePlus bất kỳ bằng lõi SDK](#7-gọi-api-byteplus-bất-kỳ-bằng-lõi-sdk)
-8. [Xử lý lỗi](#8-xử-lý-lỗi)
-9. [Khác biệt so với bản Python](#9-khác-biệt-so-với-bản-python)
+6. [Module CDN](#6-module-cdn)
+7. [STS2 token](#7-sts2-token)
+8. [Gọi API BytePlus bất kỳ bằng lõi SDK](#8-gọi-api-byteplus-bất-kỳ-bằng-lõi-sdk)
+9. [Xử lý lỗi](#9-xử-lý-lỗi)
+10. [Khác biệt so với bản Python](#10-khác-biệt-so-với-bản-python)
 
 ## 1. Yêu cầu và cài đặt
 
@@ -174,7 +175,58 @@ Lưu ý:
 - `getSmsTemplateAndOrderList` gửi dữ liệu trong **body của request GET** (đúng contract server BytePlus, như bản Python) — SDK tự xử lý qua `node:http(s)`.
 - Body rỗng → throw `Error('empty response')`; HTTP status khác 200 → throw body lỗi.
 
-## 6. STS2 token
+## 6. Module CDN
+
+```typescript
+import { CdnService } from 'byteplus-sdk-nodejs';
+
+// Chỉ hỗ trợ ap-singapore-1 (host open.byteplusapi.com, service=CDN, https).
+// Constructor không nhận region cũng mặc định về ap-singapore-1.
+const cdn = new CdnService();
+```
+
+### Quản lý domain
+
+```typescript
+const domains = await cdn.listCdnDomains({ PageNum: 1, PageSize: 10 });
+await cdn.addCdnDomain({
+  Domain: 'cdn.example.com',
+  ServiceType: 'download', // hoặc 'web', 'video'
+  Origin: [{ OriginAction: { Action: 'deny' } }], // xem tài liệu BytePlus
+});
+await cdn.startCdnDomain({ Domain: 'cdn.example.com' });
+await cdn.stopCdnDomain({ Domain: 'cdn.example.com' });
+await cdn.deleteCdnDomain({ Domain: 'cdn.example.com' });
+```
+
+### Refresh / preload / block cache
+
+```typescript
+await cdn.submitRefreshTask({ Type: 'file', Urls: 'https://cdn.example.com/a.js' });
+await cdn.submitPreloadTask({ Type: 'file', Urls: 'https://cdn.example.com/b.js' });
+await cdn.submitBlockTask({ Type: 'file', Urls: 'https://cdn.example.com/malicious.js' });
+await cdn.submitUnblockTask({ Type: 'file', Urls: 'https://cdn.example.com/malicious.js' });
+```
+
+### Thống kê và log
+
+```typescript
+const data = await cdn.describeCdnData({
+  StartTime: 1700000000,
+  EndTime: 1700003600,
+  Metric: 'flux', // hoặc 'bandwidth', 'request', ...
+});
+const summary = await cdn.describeEdgeNrtDataSummary({ /* ... */ });
+const log = await cdn.describeCdnAccessLog({ Domain: 'cdn.example.com', StartTime: '...', EndTime: '...' });
+```
+
+Lưu ý:
+
+- CDN có **87 API**, tất cả là POST `/` với `Version=2021-03-01`.
+- Danh sách đầy đủ trong `src/cdn/cdn-service.ts` — tên method chuyển sang camelCase (`describe_cdn_config` → `describeCdnConfig`).
+- Body rỗng → throw `Error('${Action}: empty response')`; HTTP status khác 200 → throw body lỗi.
+
+## 7. STS2 token
 
 Cấp credential tạm thời (ví dụ cho client mobile gọi VOD):
 
@@ -195,9 +247,9 @@ const sts = service.signSts2(policy, 3600); // tối thiểu 60 giây
 
 Truyền `null` thay cho policy nếu không giới hạn quyền.
 
-## 7. Gọi API BytePlus bất kỳ bằng lõi SDK
+## 8. Gọi API BytePlus bất kỳ bằng lõi SDK
 
-Với service chưa có module riêng (CDN, Live, VOD — xem roadmap), dùng trực tiếp `Service` + `ApiInfo`:
+Với service chưa có module riêng (Live, VOD — xem roadmap), dùng trực tiếp `Service` + `ApiInfo`:
 
 ```typescript
 import { ApiInfo, Credentials, Service, ServiceInfo } from 'byteplus-sdk-nodejs';
@@ -224,13 +276,13 @@ const [ok, body] = await service.putData('<url>', buffer, headers);   // upload 
 
 Tiện ích mã hoá đi kèm (`Util`): `sha256`, `hmacSha256`, `hmacSha1`, `crc32`, `crc32File`, `aesEncryptCbcWithBase64`, `normQuery`, `pyJsonDumps`…
 
-## 8. Xử lý lỗi
+## 9. Xử lý lỗi
 
 | Tình huống | Hành vi |
 | --- | --- |
 | HTTP status khác 200 (`Service.get/post/json`) | Throw `Error` với message là body response |
 | Visual: lỗi có body JSON | **Return** object lỗi (xem mục 4) |
-| IAM/SMS: body rỗng | Throw `Error('empty response')` |
+| IAM/SMS/CDN: body rỗng | Throw `Error('empty response')` hoặc `Error('${Action}: empty response')` |
 | SMS: mọi lỗi | Retry thêm 1 lần trước khi throw (xem mục 5) |
 | Timeout (connection + socket, tính bằng giây) | Throw `TimeoutError` từ `AbortSignal.timeout` |
 | Gọi API không khai báo trong `apiInfo` | Throw `Error('no such api')` |
@@ -246,7 +298,7 @@ try {
 }
 ```
 
-## 9. Khác biệt so với bản Python
+## 10. Khác biệt so với bản Python
 
 Hành vi ký/mã hoá giữ nguyên 100% (kiểm chứng bằng test vector đối chiếu từng byte). Khác biệt:
 

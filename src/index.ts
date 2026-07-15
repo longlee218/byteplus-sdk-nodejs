@@ -8,6 +8,7 @@ export { Service } from './base/service';
 export { IamService } from './iam/iam-service';
 export { VisualService } from './visual/visual-service';
 export { SmsService } from './sms/sms-service';
+export { CdnService } from './cdn/cdn-service';
 export {
   InnerToken,
   Policy,
