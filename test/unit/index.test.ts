@@ -18,6 +18,13 @@ describe('public API surface', () => {
     expect(sdk.IamService).toBeTypeOf('function');
     expect(sdk.VisualService).toBeTypeOf('function');
     expect(sdk.SmsService).toBeTypeOf('function');
+    expect(sdk.CdnService).toBeTypeOf('function');
+    expect(sdk.ArkService).toBeTypeOf('function');
+    expect(sdk.ArkRuntimeClient).toBeTypeOf('function');
+    expect(sdk.StsTokenManager).toBeTypeOf('function');
+    expect(sdk.ARK_BASE_URL).toBe(
+      'https://ark.ap-southeast.bytepluses.com/api/v3',
+    );
     expect(sdk.VERSION).toBeTypeOf('string');
     expect(sdk.Const.REGION_AP_SINGAPORE1).toBe('ap-singapore-1');
     expect(sdk.Util.sha256).toBeTypeOf('function');

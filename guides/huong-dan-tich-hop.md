@@ -10,10 +10,11 @@ Tài liệu này hướng dẫn tích hợp SDK vào dự án Node.js/TypeScript
 4. [Module Visual](#4-module-visual)
 5. [Module SMS](#5-module-sms)
 6. [Module CDN](#6-module-cdn)
-7. [STS2 token](#7-sts2-token)
-8. [Gọi API BytePlus bất kỳ bằng lõi SDK](#8-gọi-api-byteplus-bất-kỳ-bằng-lõi-sdk)
-9. [Xử lý lỗi](#9-xử-lý-lỗi)
-10. [Khác biệt so với bản Python](#10-khác-biệt-so-với-bản-python)
+7. [Module Ark](#7-module-ark)
+8. [STS2 token](#8-sts2-token)
+9. [Gọi API BytePlus bất kỳ bằng lõi SDK](#9-gọi-api-byteplus-bất-kỳ-bằng-lõi-sdk)
+10. [Xử lý lỗi](#10-xử-lý-lỗi)
+11. [Khác biệt so với bản Python](#11-khác-biệt-so-với-bản-python)
 
 ## 1. Yêu cầu và cài đặt
 
@@ -226,7 +227,112 @@ Lưu ý:
 - Danh sách đầy đủ trong `src/cdn/cdn-service.ts` — tên method chuyển sang camelCase (`describe_cdn_config` → `describeCdnConfig`).
 - Body rỗng → throw `Error('${Action}: empty response')`; HTTP status khác 200 → throw body lỗi.
 
-## 7. STS2 token
+## 7. Module Ark
+
+Ark được port từ [byteplus-python-sdk-v2](https://github.com/byteplus-sdk/byteplus-python-sdk-v2)
+(bản v1 không có module này), gồm 2 phần với 2 cơ chế xác thực khác nhau:
+
+| Thành phần | Xác thực | Dùng cho |
+| --- | --- | --- |
+| `ArkService` (management) | AK/SK + SignerV4 (`service=ark`) | Quản lý endpoint, model customization, batch inference, lấy API key |
+| `ArkRuntimeClient` (inference) | `Authorization: Bearer <api_key hoặc STS token>` | chat completions, embeddings, sinh ảnh, sinh video |
+
+### Management API
+
+```typescript
+import { ArkService } from 'byteplus-sdk-nodejs';
+
+const ark = new ArkService(); // singleton, mặc định region ap-singapore-1
+
+// Lấy API key ngắn hạn cho endpoint — dùng cho ArkRuntimeClient
+const resp = await ark.getApiKey({
+  DurationSeconds: 7 * 24 * 60 * 60,
+  ResourceType: 'endpoint',
+  ResourceIds: ['ep-xxx'],
+});
+```
+
+Response giữ nguyên envelope của BytePlus:
+
+```typescript
+const error = resp.ResponseMetadata?.Error;
+if (error !== undefined) throw new Error(JSON.stringify(error));
+const apiKey = resp.Result?.ApiKey; // Bearer token cho runtime
+```
+
+11 action: `createBatchInferenceJob`, `createEndpoint`,
+`createEvaluationJob`, `createModelCustomizationJob`, `deleteEndpoint`,
+`getApiKey`, `getEndpoint`, `getEndpointCertificate`,
+`getModelCustomizationJob`, `listBatchInferenceJobs`,
+`listModelCustomizationJobs` — tất cả POST, `Version=2024-01-01`.
+
+### Runtime — chat completions
+
+```typescript
+import { ArkRuntimeClient, ArkStream } from 'byteplus-sdk-nodejs';
+
+// Mode 1: API key (env ARK_API_KEY hoặc options)
+const client = new ArkRuntimeClient({ apiKey: '<API_KEY>' });
+
+// Mode 2: AK/SK — SDK tự gọi GetApiKey đổi STS token và tự refresh
+// (advisory 30 phút / mandatory 10 phút trước hạn, TTL 7 ngày).
+// Chỉ hoạt động với model dạng endpoint `ep-...`.
+// const client = new ArkRuntimeClient({ ak: '<AK>', sk: '<SK>' });
+
+const completion = await client.createChatCompletion({
+  model: 'ep-xxx',
+  messages: [{ role: 'user', content: 'Xin chào!' }],
+});
+
+// Streaming SSE
+const stream = (await client.createChatCompletion({
+  model: 'ep-xxx',
+  messages: [{ role: 'user', content: 'Xin chào!' }],
+  stream: true,
+})) as ArkStream;
+for await (const chunk of stream) {
+  // chunk.choices[0].delta.content — dừng tự động khi gặp [DONE]
+}
+```
+
+### Runtime — embeddings, ảnh, video
+
+```typescript
+// Embeddings (hỗ trợ cả api_key lẫn AK/SK)
+await client.createEmbeddings({ model: 'ep-xxx', input: ['xin chào'] });
+await client.createMultimodalEmbeddings({
+  model: 'ep-xxx',
+  input: [{ type: 'text', text: 'xin chào' }],
+});
+
+// Sinh ảnh — BẮT BUỘC api_key (AK/SK bị từ chối, giống @apikey_required Python)
+await client.generateImages({ model: 'ep-img', prompt: 'a cat', size: '1024x1024' });
+
+// Sinh video (content generation task) — BẮT BUỘC api_key
+const task = await client.createContentGenerationTask({
+  model: 'ep-video',
+  content: [{ type: 'text', text: 'A cat playing piano --ratio 16:9' }],
+});
+const status = await client.getContentGenerationTask('<task_id>');
+await client.listContentGenerationTasks({ status: 'succeeded', pageSize: 10 });
+await client.deleteContentGenerationTask('<task_id>');
+```
+
+Xem sample chạy được: [`examples/ark-get-api-key.ts`](../examples/ark-get-api-key.ts),
+[`examples/ark-chat-completions.ts`](../examples/ark-chat-completions.ts),
+[`examples/ark-content-generation-video.ts`](../examples/ark-content-generation-video.ts).
+
+Lưu ý:
+
+- Base URL mặc định `https://ark.ap-southeast.bytepluses.com/api/v3`
+  (đổi qua `options.baseUrl`).
+- Retry tự động tối đa 2 lần với lỗi mạng/408/409/429/5xx
+  (`options.maxRetries`), timeout mặc định 600 giây (`options.timeoutMs`).
+- Model `ep-m-...` (preset endpoint) chưa dùng được với AK/SK — throw
+  lỗi thiếu `project_name` giống Python.
+- E2E encryption (ECDH) chưa hỗ trợ.
+
+## 8. STS2 token
 
 Cấp credential tạm thời (ví dụ cho client mobile gọi VOD):
 
@@ -247,7 +353,7 @@ const sts = service.signSts2(policy, 3600); // tối thiểu 60 giây
 
 Truyền `null` thay cho policy nếu không giới hạn quyền.
 
-## 8. Gọi API BytePlus bất kỳ bằng lõi SDK
+## 9. Gọi API BytePlus bất kỳ bằng lõi SDK
 
 Với service chưa có module riêng (Live, VOD — xem roadmap), dùng trực tiếp `Service` + `ApiInfo`:
 
@@ -276,7 +382,7 @@ const [ok, body] = await service.putData('<url>', buffer, headers);   // upload 
 
 Tiện ích mã hoá đi kèm (`Util`): `sha256`, `hmacSha256`, `hmacSha1`, `crc32`, `crc32File`, `aesEncryptCbcWithBase64`, `normQuery`, `pyJsonDumps`…
 
-## 9. Xử lý lỗi
+## 10. Xử lý lỗi
 
 | Tình huống | Hành vi |
 | --- | --- |
@@ -298,7 +404,7 @@ try {
 }
 ```
 
-## 10. Khác biệt so với bản Python
+## 11. Khác biệt so với bản Python
 
 Hành vi ký/mã hoá giữ nguyên 100% (kiểm chứng bằng test vector đối chiếu từng byte). Khác biệt:
 

@@ -16,6 +16,7 @@ BytePlus SDK cho Node.js — port từ [byteplus-sdk-python](https://github.com/
 | Visual | ✅ Hoàn thành |
 | SMS | ✅ Hoàn thành |
 | CDN | ✅ Hoàn thành |
+| Ark (management + runtime: chat, embeddings, images, video) | ✅ Hoàn thành |
 | Live, VOD | 📋 Kế hoạch |
 
 📖 **Tài liệu chi tiết:** [Hướng dẫn tích hợp](guides/huong-dan-tich-hop.md) · **Code mẫu:** [`examples/`](examples/)
@@ -166,6 +167,85 @@ const data = await cdn.describeCdnData({ StartTime: 1700000000, EndTime: 1700003
 
 > CDN có 87 API POST, tất cả dùng `Version=2021-03-01` và được ký với
 > `service=CDN`. Xem danh sách đầy đủ trong `src/cdn/cdn-service.ts`.
+
+### Module Ark (management API)
+
+Port từ `byteplussdkark` của [byteplus-python-sdk-v2](https://github.com/byteplus-sdk/byteplus-python-sdk-v2) (bản v1 không có Ark). Ký SignerV4 với `service=ark`, dùng AK/SK:
+
+```typescript
+import { ArkService } from 'byteplus-sdk-nodejs';
+
+const ark = new ArkService(); // singleton, mặc định region ap-singapore-1
+ark.setAk('<AK>'); // bỏ qua nếu đã cấu hình env hoặc ~/.byteplus/config
+ark.setSk('<SK>');
+
+// Lấy API key ngắn hạn cho endpoint (dùng cho Ark runtime)
+const resp = await ark.getApiKey({
+  DurationSeconds: 7 * 24 * 60 * 60,
+  ResourceType: 'endpoint',
+  ResourceIds: ['ep-xxx'],
+});
+// resp.Result.ApiKey, resp.Result.ExpiredTime
+
+// Quản lý endpoint / model customization / batch inference
+await ark.getEndpoint({ Id: 'ep-xxx' });
+await ark.listBatchInferenceJobs({ PageNumber: 1 });
+```
+
+> 11 action POST, `Version=2024-01-01`. Response giữ nguyên envelope
+> `{ResponseMetadata, Result}` — kiểm tra `ResponseMetadata.Error` trước
+> khi đọc `Result`.
+
+### Module Ark runtime (inference)
+
+Port từ `byteplussdkarkruntime` — client kiểu OpenAI gọi
+`https://ark.ap-southeast.bytepluses.com/api/v3`:
+
+```typescript
+import { ArkRuntimeClient, ArkStream } from 'byteplus-sdk-nodejs';
+
+// Cách 1: API key (env ARK_API_KEY hoặc truyền trực tiếp)
+const client = new ArkRuntimeClient({ apiKey: '<API_KEY>' });
+
+// Cách 2: AK/SK — tự đổi STS token qua GetApiKey, tự refresh trước hạn.
+// Chỉ dùng được với model dạng endpoint `ep-...`.
+// const client = new ArkRuntimeClient({ ak: '<AK>', sk: '<SK>' });
+
+// Chat completions
+const completion = await client.createChatCompletion({
+  model: 'ep-xxx',
+  messages: [{ role: 'user', content: 'Hello!' }],
+});
+
+// Chat completions streaming (SSE)
+const stream = (await client.createChatCompletion({
+  model: 'ep-xxx',
+  messages: [{ role: 'user', content: 'Hello!' }],
+  stream: true,
+})) as ArkStream;
+for await (const chunk of stream) {
+  // chunk.choices[0].delta.content
+}
+
+// Embeddings
+await client.createEmbeddings({ model: 'ep-xxx', input: ['xin chào'] });
+await client.createMultimodalEmbeddings({ model: 'ep-xxx', input: [{ type: 'text', text: 'hi' }] });
+
+// Sinh ảnh (bắt buộc API key — AK/SK không được hỗ trợ, giống Python)
+await client.generateImages({ model: 'ep-img', prompt: 'a cat' });
+
+// Sinh video / content generation (bắt buộc API key)
+const task = await client.createContentGenerationTask({
+  model: 'ep-video',
+  content: [{ type: 'text', text: 'A cat playing piano --ratio 16:9' }],
+});
+await client.getContentGenerationTask('<task_id>');
+await client.listContentGenerationTasks({ status: 'succeeded', pageSize: 10 });
+await client.deleteContentGenerationTask('<task_id>');
+```
+
+> Retry tự động tối đa 2 lần cho lỗi mạng/408/409/429/5xx (giống Python
+> `DEFAULT_MAX_RETRIES=2`). Timeout mặc định 600s. E2E encryption chưa hỗ trợ.
 
 ### STS2 token
 
