@@ -15,7 +15,8 @@ BytePlus SDK cho Node.js — port từ [byteplus-sdk-python](https://github.com/
 | IAM | ✅ Hoàn thành |
 | Visual | ✅ Hoàn thành |
 | SMS | ✅ Hoàn thành |
-| CDN, Live, VOD | 📋 Kế hoạch |
+| CDN | ✅ Hoàn thành |
+| Live, VOD | 📋 Kế hoạch |
 
 📖 **Tài liệu chi tiết:** [Hướng dẫn tích hợp](guides/huong-dan-tich-hop.md) · **Code mẫu:** [`examples/`](examples/)
 
@@ -141,6 +142,30 @@ await sms.getSubAccountList({ subAccountName: '', pageIndex: 1, pageSize: 10 });
 
 > Mỗi method SMS tự retry thêm 1 lần khi lỗi (giữ nguyên `@retry(tries=2)`
 > của bản Python).
+
+### Module CDN
+
+```typescript
+import { CdnService } from 'byteplus-sdk-nodejs';
+
+const cdn = new CdnService(); // singleton, chỉ hỗ trợ ap-singapore-1, host open.byteplusapi.com
+cdn.setAk('<AK>'); // bỏ qua nếu đã cấu hình env hoặc ~/.byteplus/config
+cdn.setSk('<SK>');
+
+// Quản lý domain
+const domains = await cdn.listCdnDomains({ PageNum: 1, PageSize: 10 });
+await cdn.addCdnDomain({ Domain: 'example.com', ServiceType: 'download' });
+
+// Cache refresh / preload
+await cdn.submitRefreshTask({ Type: 'file', Urls: 'https://example.com/a.js' });
+await cdn.submitPreloadTask({ Type: 'file', Urls: 'https://example.com/b.js' });
+
+// Thống kê
+const data = await cdn.describeCdnData({ StartTime: 1700000000, EndTime: 1700003600, Metric: 'flux' });
+```
+
+> CDN có 87 API POST, tất cả dùng `Version=2021-03-01` và được ký với
+> `service=CDN`. Xem danh sách đầy đủ trong `src/cdn/cdn-service.ts`.
 
 ### STS2 token
 
