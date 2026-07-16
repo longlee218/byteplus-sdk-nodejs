@@ -28,22 +28,20 @@ Package chưa publish lên npm registry. Có 3 cách cài, tuỳ tình huống:
 ### Cách 1: Git dependency (dùng cho project khác)
 
 ```bash
-npm install git+ssh://git@github.com/longlee218/byteplus-sdk-nodejs.git
-# hoặc dùng shorthand của npm (cần Git đã có quyền truy cập repo)
-npm install github:longlee218/byteplus-sdk-nodejs
-```
+# Ghim theo phiên bản release cụ thể (khuyến nghị — xem tag tại
+# https://github.com/longlee218/byteplus-sdk-nodejs/tags)
+npm install github:longlee218/byteplus-sdk-nodejs#v0.1.1
 
-Ghim theo branch/commit cụ thể để bản cài ổn định, ví dụ:
+# hoặc URL đầy đủ qua SSH
+npm install git+ssh://git@github.com/longlee218/byteplus-sdk-nodejs.git#v0.1.1
 
-```bash
+# lấy luôn branch master (mới nhất, chưa chắc ổn định)
 npm install github:longlee218/byteplus-sdk-nodejs#master
 ```
 
-> Script `prepare` sẽ tự chạy `npm run build` khi npm cài từ git — không cần
-> build tay. Riêng tag `v0.1.0` được tạo trước khi thêm script `prepare`, nếu
-> ghim theo tag đó thì tự chạy `npm run build` trong
-> `node_modules/byteplus-sdk-nodejs` sau khi cài; các tag/release sau sẽ có
-> sẵn `prepare` và không cần bước này.
+> Script `prepare` tự chạy `npm run build` khi npm cài từ git — không cần
+> build tay. (Tag `v0.1.0` được tạo trước khi thêm script này nên không tự
+> build; từ `v0.1.1` trở đi thì cài xong dùng được ngay.)
 
 ### Cách 2: Từ thư mục local (dev cùng monorepo)
 
