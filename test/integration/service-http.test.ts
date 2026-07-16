@@ -94,7 +94,7 @@ describe('Service.get qua HTTP thật', () => {
     expect(captured.headers['authorization']).toMatch(
       /^HMAC-SHA256 Credential=AKTPtestak\/\d{8}\/ap-singapore-1\/iam\/request, SignedHeaders=[a-z0-9;-]+, Signature=[0-9a-f]{64}$/,
     );
-    expect(captured.headers['user-agent']).toBe('byteplus-sdk-nodejs/0.1.0');
+    expect(captured.headers['user-agent']).toBe('byteplus-sdk-nodejs/0.1.1');
   });
 
   it('throw Error mang body text khi status khác 200', async () => {

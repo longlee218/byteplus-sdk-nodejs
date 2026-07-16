@@ -1,6 +1,6 @@
 {
   "name": "byteplus-sdk-nodejs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "BytePlus SDK cho Node.js — port từ byteplus-sdk-python (master)",
   "license": "MIT",
   "main": "dist/index.js",
