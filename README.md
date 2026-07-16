@@ -23,11 +23,45 @@ BytePlus SDK cho Node.js — port từ [byteplus-sdk-python](https://github.com/
 
 ## Cài đặt
 
-Package chưa publish lên npm. Cài trực tiếp từ repo:
+Package chưa publish lên npm registry. Có 3 cách cài, tuỳ tình huống:
+
+### Cách 1: Git dependency (dùng cho project khác)
 
 ```bash
-npm install <đường-dẫn-hoặc-git-url-repo-này>
+npm install git+ssh://git@github.com/longlee218/byteplus-sdk-nodejs.git
+# hoặc dùng shorthand của npm (cần Git đã có quyền truy cập repo)
+npm install github:longlee218/byteplus-sdk-nodejs
 ```
+
+Ghim theo branch/commit cụ thể để bản cài ổn định, ví dụ:
+
+```bash
+npm install github:longlee218/byteplus-sdk-nodejs#master
+```
+
+> Script `prepare` sẽ tự chạy `npm run build` khi npm cài từ git — không cần
+> build tay. Riêng tag `v0.1.0` được tạo trước khi thêm script `prepare`, nếu
+> ghim theo tag đó thì tự chạy `npm run build` trong
+> `node_modules/byteplus-sdk-nodejs` sau khi cài; các tag/release sau sẽ có
+> sẵn `prepare` và không cần bước này.
+
+### Cách 2: Từ thư mục local (dev cùng monorepo)
+
+```bash
+npm install file:../đường-dẫn-tới-byteplus-sdk-nodejs
+```
+
+### Cách 3: Clone thủ công
+
+```bash
+git clone git@github.com:longlee218/byteplus-sdk-nodejs.git
+cd byteplus-sdk-nodejs
+npm install
+npm run build
+```
+
+Import qua đường dẫn tương đối tới `dist/index.js`, hoặc publish lên registry
+nội bộ (GitHub Packages/Verdaccio) nếu cần dùng ở nhiều project cùng lúc.
 
 ## Cấu hình credential
 
