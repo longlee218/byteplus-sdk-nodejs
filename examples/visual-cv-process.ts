@@ -7,7 +7,7 @@ import { VisualService } from "../src";
 interface CvResponse {
   code: number;
   message?: string;
-  data?: { resp_data: string; status: string };
+  data?: { task_id?: string; resp_data?: string; status?: string };
   status: number;
   request_id: string;
   time_elapsed: string;
@@ -19,23 +19,21 @@ async function main(): Promise<void> {
   const imageBase64 = readFileSync("/đường/dẫn/ảnh.jpg").toString("base64");
 
   // ----- Bất đồng bộ (submit rồi poll kết quả) -----
-  const taskId = "task_" + new Date().getTime();
-  const task = (await visual.cvSync2AsyncGetResult({
+  const submit = (await visual.cvSync2AsyncSubmitTask({
     req_key: "dreamactor_m20_gen_video_cvtob",
     binary_data_base64: [imageBase64],
-    video_url:
-      "https://sf16-resources.bytepluscdn.com/obj/byteplus-public-aiso/cloud-universal-doc/upload_1245a943232e4a7801f3e4dfba953ba5.mp4",
-    task_id: taskId,
+    video_url: "<url_video_mẫu>",
   })) as CvResponse;
 
-  if (task.code !== 10000) {
-    throw new Error(`Submit thất bại ${task.code}: ${task.message}`);
+  if (submit.code !== 10000 || submit.data?.task_id === undefined) {
+    throw new Error(`Submit thất bại ${submit.code}: ${submit.message}`);
   }
+  const taskId = submit.data.task_id;
 
   let output: CvResponse;
   do {
     await new Promise((r) => setTimeout(r, 3000));
-    output = (await visual.cvGetResult({
+    output = (await visual.cvSync2AsyncGetResult({
       req_key: "dreamactor_m20_gen_video_cvtob",
       task_id: taskId,
     })) as CvResponse;
