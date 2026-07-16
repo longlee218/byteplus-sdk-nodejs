@@ -12,6 +12,7 @@
     "node": ">=18.19.0"
   },
   "scripts": {
+    "prepare": "npm run build",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "TZ=Asia/Ho_Chi_Minh vitest run --coverage",
