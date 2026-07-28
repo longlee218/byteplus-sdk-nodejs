@@ -13,17 +13,27 @@ type Params = Record<string, unknown>;
 const ARK_VERSION = '2024-01-01';
 
 const ARK_ACTIONS = [
+  'CreateAsset',
+  'CreateAssetGroup',
   'CreateBatchInferenceJob',
   'CreateEndpoint',
   'CreateEvaluationJob',
   'CreateModelCustomizationJob',
+  'DeleteAsset',
+  'DeleteAssetGroup',
   'DeleteEndpoint',
   'GetApiKey',
+  'GetAsset',
+  'GetAssetGroup',
   'GetEndpoint',
   'GetEndpointCertificate',
   'GetModelCustomizationJob',
+  'ListAssetGroups',
+  'ListAssets',
   'ListBatchInferenceJobs',
   'ListModelCustomizationJobs',
+  'UpdateAsset',
+  'UpdateAssetGroup',
 ] as const;
 
 export class ArkService extends Service {
@@ -78,6 +88,14 @@ export class ArkService extends Service {
     return JSON.parse(res);
   }
 
+  createAsset(body: Params): Promise<unknown> {
+    return this.callJson('CreateAsset', body);
+  }
+
+  createAssetGroup(body: Params): Promise<unknown> {
+    return this.callJson('CreateAssetGroup', body);
+  }
+
   createBatchInferenceJob(body: Params): Promise<unknown> {
     return this.callJson('CreateBatchInferenceJob', body);
   }
@@ -94,12 +112,28 @@ export class ArkService extends Service {
     return this.callJson('CreateModelCustomizationJob', body);
   }
 
+  deleteAsset(body: Params): Promise<unknown> {
+    return this.callJson('DeleteAsset', body);
+  }
+
+  deleteAssetGroup(body: Params): Promise<unknown> {
+    return this.callJson('DeleteAssetGroup', body);
+  }
+
   deleteEndpoint(body: Params): Promise<unknown> {
     return this.callJson('DeleteEndpoint', body);
   }
 
   getApiKey(body: Params): Promise<unknown> {
     return this.callJson('GetApiKey', body);
+  }
+
+  getAsset(body: Params): Promise<unknown> {
+    return this.callJson('GetAsset', body);
+  }
+
+  getAssetGroup(body: Params): Promise<unknown> {
+    return this.callJson('GetAssetGroup', body);
   }
 
   getEndpoint(body: Params): Promise<unknown> {
@@ -114,11 +148,27 @@ export class ArkService extends Service {
     return this.callJson('GetModelCustomizationJob', body);
   }
 
+  listAssetGroups(body: Params): Promise<unknown> {
+    return this.callJson('ListAssetGroups', body);
+  }
+
+  listAssets(body: Params): Promise<unknown> {
+    return this.callJson('ListAssets', body);
+  }
+
   listBatchInferenceJobs(body: Params): Promise<unknown> {
     return this.callJson('ListBatchInferenceJobs', body);
   }
 
   listModelCustomizationJobs(body: Params): Promise<unknown> {
     return this.callJson('ListModelCustomizationJobs', body);
+  }
+
+  updateAsset(body: Params): Promise<unknown> {
+    return this.callJson('UpdateAsset', body);
+  }
+
+  updateAssetGroup(body: Params): Promise<unknown> {
+    return this.callJson('UpdateAssetGroup', body);
   }
 }

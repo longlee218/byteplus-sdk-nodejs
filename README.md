@@ -222,9 +222,20 @@ const resp = await ark.getApiKey({
 // Quản lý endpoint / model customization / batch inference
 await ark.getEndpoint({ Id: 'ep-xxx' });
 await ark.listBatchInferenceJobs({ PageNumber: 1 });
+
+// Private trusted asset library (virtual portrait) cho Seedance 2.0
+const group = await ark.createAssetGroup({ Name: 'g', ProjectName: 'default' });
+const asset = await ark.createAsset({
+  GroupId: group.Result.Id,
+  URL: '<IMAGE_URL>',
+  AssetType: 'Image',
+  ProjectName: 'default',
+});
+await ark.getAsset({ Id: asset.Result.Id, ProjectName: 'default' }); // poll đến khi Status = Active
+// Dùng asset://<AssetId> trong content.image_url.url khi gọi ArkRuntimeClient.createContentGenerationTask
 ```
 
-> 11 action POST, `Version=2024-01-01`. Response giữ nguyên envelope
+> 21 action POST, `Version=2024-01-01`. Response giữ nguyên envelope
 > `{ResponseMetadata, Result}` — kiểm tra `ResponseMetadata.Error` trước
 > khi đọc `Result`.
 
