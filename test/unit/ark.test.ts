@@ -17,17 +17,27 @@ afterEach(() => {
 });
 
 const ARK_ACTIONS = [
+  'CreateAsset',
+  'CreateAssetGroup',
   'CreateBatchInferenceJob',
   'CreateEndpoint',
   'CreateEvaluationJob',
   'CreateModelCustomizationJob',
+  'DeleteAsset',
+  'DeleteAssetGroup',
   'DeleteEndpoint',
   'GetApiKey',
+  'GetAsset',
+  'GetAssetGroup',
   'GetEndpoint',
   'GetEndpointCertificate',
   'GetModelCustomizationJob',
+  'ListAssetGroups',
+  'ListAssets',
   'ListBatchInferenceJobs',
   'ListModelCustomizationJobs',
+  'UpdateAsset',
+  'UpdateAssetGroup',
 ];
 
 describe('ArkService — cấu hình mặc định (khớp Python v2)', () => {
@@ -53,7 +63,7 @@ describe('ArkService — cấu hình mặc định (khớp Python v2)', () => {
     expect(svc.serviceInfo.host).toBe('open.byteplusapi.com');
   });
 
-  it('apiInfo đủ 11 action POST với path swagger và version 2024-01-01', () => {
+  it('apiInfo đủ 21 action POST với path swagger và version 2024-01-01', () => {
     const api = ArkService.getApiInfo();
     expect(Object.keys(api).sort()).toEqual([...ARK_ACTIONS].sort());
     for (const action of ARK_ACTIONS) {
@@ -91,17 +101,27 @@ describe('ArkService — method mapping', () => {
       .mockResolvedValue('{"ResponseMetadata": {}, "Result": {}}');
 
     const cases: Array<[string, (body: Record<string, unknown>) => Promise<unknown>]> = [
+      ['CreateAsset', (b) => svc.createAsset(b)],
+      ['CreateAssetGroup', (b) => svc.createAssetGroup(b)],
       ['CreateBatchInferenceJob', (b) => svc.createBatchInferenceJob(b)],
       ['CreateEndpoint', (b) => svc.createEndpoint(b)],
       ['CreateEvaluationJob', (b) => svc.createEvaluationJob(b)],
       ['CreateModelCustomizationJob', (b) => svc.createModelCustomizationJob(b)],
+      ['DeleteAsset', (b) => svc.deleteAsset(b)],
+      ['DeleteAssetGroup', (b) => svc.deleteAssetGroup(b)],
       ['DeleteEndpoint', (b) => svc.deleteEndpoint(b)],
       ['GetApiKey', (b) => svc.getApiKey(b)],
+      ['GetAsset', (b) => svc.getAsset(b)],
+      ['GetAssetGroup', (b) => svc.getAssetGroup(b)],
       ['GetEndpoint', (b) => svc.getEndpoint(b)],
       ['GetEndpointCertificate', (b) => svc.getEndpointCertificate(b)],
       ['GetModelCustomizationJob', (b) => svc.getModelCustomizationJob(b)],
+      ['ListAssetGroups', (b) => svc.listAssetGroups(b)],
+      ['ListAssets', (b) => svc.listAssets(b)],
       ['ListBatchInferenceJobs', (b) => svc.listBatchInferenceJobs(b)],
       ['ListModelCustomizationJobs', (b) => svc.listModelCustomizationJobs(b)],
+      ['UpdateAsset', (b) => svc.updateAsset(b)],
+      ['UpdateAssetGroup', (b) => svc.updateAssetGroup(b)],
     ];
 
     for (const [action, call] of cases) {

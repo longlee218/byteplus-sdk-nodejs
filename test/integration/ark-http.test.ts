@@ -114,6 +114,22 @@ describe('ArkService — management API qua HTTP thật', () => {
     );
   });
 
+  it('createAssetGroup và listAssets trỏ đúng Action (private trusted asset library)', async () => {
+    responseStatus = 200;
+    responseBody = '{"ResponseMetadata":{},"Result":{}}';
+    const svc = makeArkService();
+
+    await svc.createAssetGroup({ Name: 'g', ProjectName: 'default' });
+    expect(capturedUrl).toBe(
+      '/CreateAssetGroup/2024-01-01/ark/post/application_json/?Action=CreateAssetGroup&Version=2024-01-01',
+    );
+
+    await svc.listAssets({ Filter: { GroupIds: ['group-1'] } });
+    expect(capturedUrl).toBe(
+      '/ListAssets/2024-01-01/ark/post/application_json/?Action=ListAssets&Version=2024-01-01',
+    );
+  });
+
   it('non-200 throw với body lỗi', async () => {
     responseStatus = 403;
     responseBody =
