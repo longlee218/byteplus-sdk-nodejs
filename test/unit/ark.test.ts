@@ -23,6 +23,7 @@ const ARK_ACTIONS = [
   'CreateEndpoint',
   'CreateEvaluationJob',
   'CreateModelCustomizationJob',
+  'CreateVisualValidateSession',
   'DeleteAsset',
   'DeleteAssetGroup',
   'DeleteEndpoint',
@@ -32,6 +33,7 @@ const ARK_ACTIONS = [
   'GetEndpoint',
   'GetEndpointCertificate',
   'GetModelCustomizationJob',
+  'GetVisualValidateResult',
   'ListAssetGroups',
   'ListAssets',
   'ListBatchInferenceJobs',
@@ -63,7 +65,7 @@ describe('ArkService — cấu hình mặc định (khớp Python v2)', () => {
     expect(svc.serviceInfo.host).toBe('open.byteplusapi.com');
   });
 
-  it('apiInfo đủ 21 action POST với path swagger và version 2024-01-01', () => {
+  it('apiInfo đủ 23 action POST với path swagger và version 2024-01-01', () => {
     const api = ArkService.getApiInfo();
     expect(Object.keys(api).sort()).toEqual([...ARK_ACTIONS].sort());
     for (const action of ARK_ACTIONS) {
@@ -107,6 +109,7 @@ describe('ArkService — method mapping', () => {
       ['CreateEndpoint', (b) => svc.createEndpoint(b)],
       ['CreateEvaluationJob', (b) => svc.createEvaluationJob(b)],
       ['CreateModelCustomizationJob', (b) => svc.createModelCustomizationJob(b)],
+      ['CreateVisualValidateSession', (b) => svc.createVisualValidateSession(b)],
       ['DeleteAsset', (b) => svc.deleteAsset(b)],
       ['DeleteAssetGroup', (b) => svc.deleteAssetGroup(b)],
       ['DeleteEndpoint', (b) => svc.deleteEndpoint(b)],
@@ -116,6 +119,7 @@ describe('ArkService — method mapping', () => {
       ['GetEndpoint', (b) => svc.getEndpoint(b)],
       ['GetEndpointCertificate', (b) => svc.getEndpointCertificate(b)],
       ['GetModelCustomizationJob', (b) => svc.getModelCustomizationJob(b)],
+      ['GetVisualValidateResult', (b) => svc.getVisualValidateResult(b)],
       ['ListAssetGroups', (b) => svc.listAssetGroups(b)],
       ['ListAssets', (b) => svc.listAssets(b)],
       ['ListBatchInferenceJobs', (b) => svc.listBatchInferenceJobs(b)],
