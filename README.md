@@ -236,11 +236,14 @@ const validated = await ark.getVisualValidateResult({
   BytedToken: session.Result.BytedToken,
   ProjectName: 'default',
 });
-// validated.Result.GroupId — upload ảnh của chính người đó bằng createAsset
-// bên dưới; asset sai người hoặc nhiều mặt sẽ về Status = 'Failed'.
+// validated.Result.GroupId — tái dùng createAsset ở snippet virtual portrait
+// bên dưới, chỉ thay GroupId: group.Result.Id bằng
+// GroupId: validated.Result.GroupId (asset sai người hoặc nhiều mặt sẽ về
+// Status = 'Failed').
 // Query riêng library người thật bằng GroupType:
 await ark.listAssets({
   Filter: { GroupIds: [validated.Result.GroupId], GroupType: 'LivenessFace' },
+  ProjectName: 'default',
 });
 
 // Private trusted asset library (virtual portrait) cho Seedance 2.0
