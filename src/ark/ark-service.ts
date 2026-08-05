@@ -19,6 +19,7 @@ const ARK_ACTIONS = [
   'CreateEndpoint',
   'CreateEvaluationJob',
   'CreateModelCustomizationJob',
+  'CreateVisualValidateSession',
   'DeleteAsset',
   'DeleteAssetGroup',
   'DeleteEndpoint',
@@ -28,6 +29,7 @@ const ARK_ACTIONS = [
   'GetEndpoint',
   'GetEndpointCertificate',
   'GetModelCustomizationJob',
+  'GetVisualValidateResult',
   'ListAssetGroups',
   'ListAssets',
   'ListBatchInferenceJobs',
@@ -112,6 +114,14 @@ export class ArkService extends Service {
     return this.callJson('CreateModelCustomizationJob', body);
   }
 
+  // Mở phiên xác thực người thật cho real-human portrait library: trả H5Link
+  // để end user tự xác thực trên browser và BytedToken (sống 30 phút) để đổi
+  // lấy GroupId qua getVisualValidateResult. Asset group của người thật sinh
+  // ra từ đây, không tạo bằng createAssetGroup.
+  createVisualValidateSession(body: Params): Promise<unknown> {
+    return this.callJson('CreateVisualValidateSession', body);
+  }
+
   deleteAsset(body: Params): Promise<unknown> {
     return this.callJson('DeleteAsset', body);
   }
@@ -146,6 +156,12 @@ export class ArkService extends Service {
 
   getModelCustomizationJob(body: Params): Promise<unknown> {
     return this.callJson('GetModelCustomizationJob', body);
+  }
+
+  // Đổi BytedToken thành GroupId của asset group vừa được tạo cho người thật.
+  // Chỉ gọi được sau khi end user hoàn tất H5 (resultCode 10000).
+  getVisualValidateResult(body: Params): Promise<unknown> {
+    return this.callJson('GetVisualValidateResult', body);
   }
 
   listAssetGroups(body: Params): Promise<unknown> {

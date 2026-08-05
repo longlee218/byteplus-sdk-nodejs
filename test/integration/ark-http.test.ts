@@ -130,6 +130,28 @@ describe('ArkService — management API qua HTTP thật', () => {
     );
   });
 
+  it('createVisualValidateSession và getVisualValidateResult trỏ đúng Action (real-human portrait library)', async () => {
+    responseStatus = 200;
+    responseBody = '{"ResponseMetadata":{},"Result":{}}';
+    const svc = makeArkService();
+
+    await svc.createVisualValidateSession({
+      CallbackURL: 'https://www.example.com/callback',
+      ProjectName: 'default',
+    });
+    expect(capturedUrl).toBe(
+      '/CreateVisualValidateSession/2024-01-01/ark/post/application_json/?Action=CreateVisualValidateSession&Version=2024-01-01',
+    );
+
+    await svc.getVisualValidateResult({
+      BytedToken: 'token-1',
+      ProjectName: 'default',
+    });
+    expect(capturedUrl).toBe(
+      '/GetVisualValidateResult/2024-01-01/ark/post/application_json/?Action=GetVisualValidateResult&Version=2024-01-01',
+    );
+  });
+
   it('non-200 throw với body lỗi', async () => {
     responseStatus = 403;
     responseBody =
