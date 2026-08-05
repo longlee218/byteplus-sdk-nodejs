@@ -38,6 +38,17 @@ const PROJECT_NAME = process.env["PROJECT_NAME"] || "default";
 // GroupType của asset group người thật, dùng để phân biệt với virtual portrait
 // khi query ListAssets/ListAssetGroups (hai library dùng chung API).
 const GROUP_TYPE_REAL_HUMAN = "LivenessFace";
+// Docs ModelArk ký AK/SK bằng ap-southeast-1 (mọi sample Go trong tutorial
+// dùng WithRegion("ap-southeast-1")). Default của SDK là ap-singapore-1
+// (REGION_AP_SINGAPORE1, port từ Python v1) — đổi qua ARK_REGION nếu ký sai
+// region báo lỗi signature.
+const REGION = process.env["ARK_REGION"] || "ap-southeast-1";
+// GetAsset báo Active nghĩa là preprocessing xong, KHÔNG đảm bảo runtime
+// (ArkRuntimeClient/ARK_API_KEY) đã đồng bộ xong asset đó — BytePlus không
+// cam kết SLA cho bước này. Khi sinh video gặp đúng lỗi "asset ... is not
+// found" thì thử lại có giới hạn thay vì coi là lỗi vĩnh viễn ngay lập tức.
+const VIDEO_GEN_ASSET_SYNC_RETRIES = 10;
+const VIDEO_GEN_ASSET_SYNC_RETRY_DELAY_MS = 60_000;
 
 // GetVisualValidateResult chỉ trả GroupId sau khi end user bấm Complete trên
 // H5. BytePlus không mô tả response lúc phiên còn dở, nên không thể phân biệt
@@ -70,6 +81,24 @@ interface TaskStatus {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Chỉ khớp đúng lỗi "asset <id> is not found" (InvalidParameter) — lỗi
+// khác (sai model, quota, v.v.) phải throw ngay, không được nuốt.
+function isAssetNotYetSynced(e: unknown, assetId: string): boolean {
+  if (!(e instanceof Error)) return false;
+  try {
+    const parsed = JSON.parse(e.message) as {
+      error?: { code?: string; message?: string };
+    };
+    return (
+      parsed.error?.code === "InvalidParameter" &&
+      typeof parsed.error.message === "string" &&
+      parsed.error.message.includes(`asset ${assetId} is not found`)
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function prompt(question: string): Promise<void> {
@@ -166,18 +195,36 @@ async function waitForAssetActive(
 // Prompt phải gọi asset theo thứ tự "Image N" trong request body, không dùng
 // Asset ID trực tiếp.
 async function generateVideo(assetId: string): Promise<void> {
-  const client = new ArkRuntimeClient();
-  const created = (await client.createContentGenerationTask({
-    model: MODEL,
-    content: [
-      { type: "text", text: "The person in Image 1 waves at the camera." },
-      {
-        type: "image_url",
-        role: "reference_image",
-        image_url: { url: `asset://${assetId}` },
-      },
-    ],
-  })) as TaskStatus;
+  const client = new ArkRuntimeClient({ region: REGION });
+
+  let created: TaskStatus | undefined;
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      created = (await client.createContentGenerationTask({
+        model: MODEL,
+        content: [
+          { type: "text", text: "The person in Image 1 waves at the camera." },
+          {
+            type: "image_url",
+            role: "reference_image",
+            image_url: { url: `asset://${assetId}` },
+          },
+        ],
+      })) as TaskStatus;
+      break;
+    } catch (e) {
+      if (
+        !isAssetNotYetSynced(e, assetId) ||
+        attempt >= VIDEO_GEN_ASSET_SYNC_RETRIES
+      ) {
+        throw e;
+      }
+      console.log(
+        `lần ${attempt}/${VIDEO_GEN_ASSET_SYNC_RETRIES}: asset chưa đồng bộ sang runtime, chờ ${VIDEO_GEN_ASSET_SYNC_RETRY_DELAY_MS / 1000}s rồi thử lại...`,
+      );
+      await sleep(VIDEO_GEN_ASSET_SYNC_RETRY_DELAY_MS);
+    }
+  }
   console.log("Task đã tạo:", created.id);
 
   for (;;) {
@@ -215,7 +262,7 @@ async function main(): Promise<void> {
     );
   }
 
-  const ark = new ArkService();
+  const ark = new ArkService(REGION);
 
   // End user chỉ phải xác thực một lần; lần sau truyền GROUP_ID để upload thêm
   // ảnh của cùng người vào cùng group.

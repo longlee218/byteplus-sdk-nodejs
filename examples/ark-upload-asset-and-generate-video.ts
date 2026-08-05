@@ -21,13 +21,24 @@ import { ArkRuntimeClient, ArkService } from "../src";
 
 const MODEL = "dreamina-seedance-2-0-260128";
 const IMAGE_URL =
-  "https://dev-static.apero.vn/content/uploads/teal_53af4a1091.jpeg";
+  "https://dev-static.apero.vn/content/uploads/Screenshot_2026_08_05_at_16_58_55_fd407bf3be.png";
 // Assets are isolated per BytePlus Project — CreateAsset/GetAsset must use
 // the SAME ProjectName as whatever project ARK_API_KEY was issued under,
 // or content generation throws "asset ... is not found" even though the
 // asset is genuinely Active. Override to test different project names
 // without editing this file each time.
 const PROJECT_NAME = process.env["PROJECT_NAME"] || "default";
+// Docs ModelArk ký AK/SK bằng ap-southeast-1 (mọi sample Go trong tutorial
+// dùng WithRegion("ap-southeast-1")). Default của SDK là ap-singapore-1
+// (REGION_AP_SINGAPORE1, port từ Python v1) — đổi qua ARK_REGION nếu ký sai
+// region báo lỗi signature.
+const REGION = process.env["ARK_REGION"] || "ap-southeast-1";
+// GetAsset báo Active nghĩa là preprocessing xong, KHÔNG đảm bảo runtime
+// (ArkRuntimeClient/ARK_API_KEY) đã đồng bộ xong asset đó — BytePlus không
+// cam kết SLA cho bước này. Khi sinh video gặp đúng lỗi "asset ... is not
+// found" thì thử lại có giới hạn thay vì coi là lỗi vĩnh viễn ngay lập tức.
+const VIDEO_GEN_ASSET_SYNC_RETRIES = 10;
+const VIDEO_GEN_ASSET_SYNC_RETRY_DELAY_MS = 60_000;
 
 interface ArkEnvelope<T> {
   ResponseMetadata?: { Error?: { Code?: string; Message?: string } };
@@ -55,6 +66,24 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Chỉ khớp đúng lỗi "asset <id> is not found" (InvalidParameter) — lỗi
+// khác (sai model, quota, v.v.) phải throw ngay, không được nuốt.
+function isAssetNotYetSynced(e: unknown, assetId: string): boolean {
+  if (!(e instanceof Error)) return false;
+  try {
+    const parsed = JSON.parse(e.message) as {
+      error?: { code?: string; message?: string };
+    };
+    return (
+      parsed.error?.code === "InvalidParameter" &&
+      typeof parsed.error.message === "string" &&
+      parsed.error.message.includes(`asset ${assetId} is not found`)
+    );
+  } catch {
+    return false;
+  }
+}
+
 // Poll GetAsset đến khi Status thành Active mới được dùng cho inference;
 // Failed thì báo lỗi ngay, tránh chờ vô hạn.
 async function waitForAssetActive(
@@ -78,18 +107,36 @@ async function waitForAssetActive(
 }
 
 async function generateVideo(assetId: string): Promise<void> {
-  const client = new ArkRuntimeClient();
-  const created = (await client.createContentGenerationTask({
-    model: MODEL,
-    content: [
-      { type: "text", text: "The person in Image 1 waves at the camera." },
-      {
-        type: "image_url",
-        role: "reference_image",
-        image_url: { url: `asset://${assetId}` },
-      },
-    ],
-  })) as TaskStatus;
+  const client = new ArkRuntimeClient({ region: REGION });
+
+  let created: TaskStatus | undefined;
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      created = (await client.createContentGenerationTask({
+        model: MODEL,
+        content: [
+          { type: "text", text: "The person in Image 1 waves at the camera." },
+          {
+            type: "image_url",
+            role: "reference_image",
+            image_url: { url: `asset://${assetId}` },
+          },
+        ],
+      })) as TaskStatus;
+      break;
+    } catch (e) {
+      if (
+        !isAssetNotYetSynced(e, assetId) ||
+        attempt >= VIDEO_GEN_ASSET_SYNC_RETRIES
+      ) {
+        throw e;
+      }
+      console.log(
+        `lần ${attempt}/${VIDEO_GEN_ASSET_SYNC_RETRIES}: asset chưa đồng bộ sang runtime, chờ ${VIDEO_GEN_ASSET_SYNC_RETRY_DELAY_MS / 1000}s rồi thử lại...`,
+      );
+      await sleep(VIDEO_GEN_ASSET_SYNC_RETRY_DELAY_MS);
+    }
+  }
   console.log("Task đã tạo:", created.id);
 
   for (;;) {
@@ -113,12 +160,15 @@ async function main(): Promise<void> {
 
   const existingAssetId = process.env["ASSET_ID"];
   if (existingAssetId) {
-    console.log("ASSET_ID set — bỏ qua tạo group/asset, dùng lại:", existingAssetId);
+    console.log(
+      "ASSET_ID set — bỏ qua tạo group/asset, dùng lại:",
+      existingAssetId,
+    );
     await generateVideo(existingAssetId);
     return;
   }
 
-  const ark = new ArkService();
+  const ark = new ArkService(REGION);
 
   const group = unwrap(
     (await ark.createAssetGroup({
