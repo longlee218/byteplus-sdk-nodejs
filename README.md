@@ -223,6 +223,26 @@ const resp = await ark.getApiKey({
 await ark.getEndpoint({ Id: 'ep-xxx' });
 await ark.listBatchInferenceJobs({ PageNumber: 1 });
 
+// Private trusted asset library (real-human portrait) cho Seedance 2.0 —
+// asset group sinh ra từ xác thực người thật, không dùng createAssetGroup
+const session = await ark.createVisualValidateSession({
+  CallbackURL: 'https://www.example.com/callback',
+  ProjectName: 'default',
+});
+console.log(session.Result.H5Link); // end user mở link này để xác thực (thêm &lng=en)
+// Sau khi end user hoàn tất H5 (resultCode 10000), đổi BytedToken lấy GroupId.
+// BytedToken sống 30 phút.
+const validated = await ark.getVisualValidateResult({
+  BytedToken: session.Result.BytedToken,
+  ProjectName: 'default',
+});
+// validated.Result.GroupId — upload ảnh của chính người đó bằng createAsset
+// bên dưới; asset sai người hoặc nhiều mặt sẽ về Status = 'Failed'.
+// Query riêng library người thật bằng GroupType:
+await ark.listAssets({
+  Filter: { GroupIds: [validated.Result.GroupId], GroupType: 'LivenessFace' },
+});
+
 // Private trusted asset library (virtual portrait) cho Seedance 2.0
 const group = await ark.createAssetGroup({ Name: 'g', ProjectName: 'default' });
 const asset = await ark.createAsset({
@@ -235,9 +255,13 @@ await ark.getAsset({ Id: asset.Result.Id, ProjectName: 'default' }); // poll đ�
 // Dùng asset://<AssetId> trong content.image_url.url khi gọi ArkRuntimeClient.createContentGenerationTask
 ```
 
-> 21 action POST, `Version=2024-01-01`. Response giữ nguyên envelope
+> 23 action POST, `Version=2024-01-01`. Response giữ nguyên envelope
 > `{ResponseMetadata, Result}` — kiểm tra `ResponseMetadata.Error` trước
 > khi đọc `Result`.
+
+Xem `examples/ark-upload-asset-and-generate-video.ts` (virtual portrait) và
+`examples/ark-real-human-asset-and-generate-video.ts` (real-human portrait)
+cho luồng đầy đủ tới bước sinh video.
 
 ### Module Ark runtime (inference)
 
