@@ -94,11 +94,23 @@ async function verifyRealPerson(ark: ArkService): Promise<string> {
   if (bytedToken === undefined) {
     throw new Error("thiếu BytedToken trong response CreateVisualValidateSession");
   }
+  const h5Link = session.H5Link;
+  if (h5Link === undefined) {
+    throw new Error("thiếu H5Link trong response CreateVisualValidateSession");
+  }
 
   // Link mặc định tiếng Trung giản thể; lng nhận zh | en | zh-Hant.
   console.log("Mở link này trên browser để xác thực người thật:");
-  console.log(`${session.H5Link ?? ""}&lng=en`);
-  console.log("BytedToken:", bytedToken);
+  console.log(`${h5Link}&lng=en`);
+
+  // rl.question không bao giờ resolve khi stdin không phải TTY (pipe, CI),
+  // nên tiến trình treo rồi thoát mã 0 — trông như thành công dù chưa xác
+  // thực gì. Đây là điều kiện tiên quyết thật sự, chặn sớm thay vì để im lặng.
+  if (process.stdin.isTTY !== true) {
+    throw new Error(
+      "cần TTY để xác nhận bước H5 — hoặc truyền GROUP_ID để bỏ qua xác thực",
+    );
+  }
   await prompt("Bấm Enter sau khi đã hoàn tất xác thực trên H5...");
 
   let lastError = "";
@@ -238,6 +250,7 @@ async function main(): Promise<void> {
         GroupType: GROUP_TYPE_REAL_HUMAN,
         Statuses: ["Active"],
       },
+      ProjectName: PROJECT_NAME,
       PageNumber: 1,
       PageSize: 10,
     })) as ArkEnvelope<{ TotalCount?: number }>,
