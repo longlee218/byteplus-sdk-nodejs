@@ -33,6 +33,7 @@ const PROJECT_NAME = process.env["PROJECT_NAME"] || "default";
 // (REGION_AP_SINGAPORE1, port từ Python v1) — đổi qua ARK_REGION nếu ký sai
 // region báo lỗi signature.
 const REGION = process.env["ARK_REGION"] || "ap-southeast-1";
+const DEMO_GROUP_NAME = process.env["GROUP_NAME"] || "demo-group";
 // GetAsset báo Active nghĩa là preprocessing xong, KHÔNG đảm bảo runtime
 // (ArkRuntimeClient/ARK_API_KEY) đã đồng bộ xong asset đó — BytePlus không
 // cam kết SLA cho bước này. Khi sinh video gặp đúng lỗi "asset ... is not
@@ -82,6 +83,41 @@ function isAssetNotYetSynced(e: unknown, assetId: string): boolean {
   } catch {
     return false;
   }
+}
+
+// Tìm lại group theo tên trước khi tạo. Bản trước gọi createAssetGroup vô
+// điều kiện nên mỗi lần chạy example lại sinh thêm một group "demo-group"
+// trùng tên (đã thấy 3 bản trùng trong project Reelme), ăn dần quota dùng
+// chung giữa virtual portrait và real-human library.
+//
+// Filter.Name là fuzzy nên phải so khớp chính xác ở client; GroupType bắt
+// buộc, thiếu nó BytePlus trả MissingParameter.Filter.GroupType.
+async function getOrCreateDemoGroup(ark: ArkService): Promise<string> {
+  const listed = unwrap(
+    (await ark.listAssetGroups({
+      Filter: { Name: DEMO_GROUP_NAME, GroupType: "AIGC" },
+      ProjectName: PROJECT_NAME,
+      PageNumber: 1,
+      PageSize: 100,
+    })) as ArkEnvelope<{ Items?: Array<{ Id?: string; Name?: string }> }>,
+  );
+  const existing = listed.Items?.find((g) => g.Name === DEMO_GROUP_NAME);
+  if (existing?.Id !== undefined) {
+    console.log("dùng lại group có sẵn:", existing.Id);
+    return existing.Id;
+  }
+
+  const created = unwrap(
+    (await ark.createAssetGroup({
+      Name: DEMO_GROUP_NAME,
+      Description: "Demo asset group",
+      ProjectName: PROJECT_NAME,
+    })) as ArkEnvelope<{ Id?: string }>,
+  );
+  if (created.Id === undefined) {
+    throw new Error("thiếu Id trong response CreateAssetGroup");
+  }
+  return created.Id;
 }
 
 // Poll GetAsset đến khi Status thành Active mới được dùng cho inference;
@@ -170,18 +206,12 @@ async function main(): Promise<void> {
 
   const ark = new ArkService(REGION);
 
-  const group = unwrap(
-    (await ark.createAssetGroup({
-      Name: "demo-group",
-      Description: "Demo asset group",
-      ProjectName: PROJECT_NAME,
-    })) as ArkEnvelope<{ Id?: string }>,
-  );
-  console.log("GroupId:", group.Id);
+  const groupId = await getOrCreateDemoGroup(ark);
+  console.log("GroupId:", groupId);
 
   const asset = unwrap(
     (await ark.createAsset({
-      GroupId: group.Id,
+      GroupId: groupId,
       URL: IMAGE_URL,
       AssetType: "Image",
       ProjectName: PROJECT_NAME,
